@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
-const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,30 +8,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/visitor-tracker';
-
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('✅ MongoDB conectado');
-}).catch(err => {
-    console.error('❌ Erro ao conectar MongoDB:', err.message);
-});
-
-// Visitor Schema
-const visitorSchema = new mongoose.Schema({
-    timestamp: { type: Date, default: Date.now },
-    ip: String,
-    userAgent: String,
-    referer: String,
-    acceptLanguage: String,
-    geolocation: Object,
-    clientInfo: Object
-}, { timestamps: true });
-
-const Visitor = mongoose.model('Visitor', visitorSchema);
+// In-memory storage (resets on deploy/restart)
+let visitors = [];
 
 // Helper to get client IP
 function getClientIp(req) {
@@ -64,17 +41,24 @@ app.post('/api/log', async (req, res) => {
             geoData = { error: 'GeoIP lookup failed' };
         }
 
-        // Save to MongoDB
-        const visitor = new Visitor({
+        const visitorRecord = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
             ip: ip,
             userAgent: userAgent,
             referer: referer,
             acceptLanguage: acceptLanguage,
             geolocation: geoData,
             clientInfo: clientData
-        });
+        };
 
-        await visitor.save();
+        // Store in memory (newest first)
+        visitors.unshift(visitorRecord);
+
+        // Keep only last 100 visitors
+        if (visitors.length > 100) {
+            visitors = visitors.slice(0, 100);
+        }
 
         console.log(`[${new Date().toLocaleString('pt-BR')}] Novo visitante: ${ip}`);
 
@@ -96,24 +80,14 @@ app.get('/admin', (req, res) => {
 });
 
 // API to get all visitors
-app.get('/api/visitors', async (req, res) => {
-    try {
-        const visitors = await Visitor.find().sort({ timestamp: -1 }).limit(100);
-        res.json(visitors);
-    } catch (error) {
-        console.error('Error reading visitors:', error);
-        res.status(500).json({ error: 'Failed to read visitors' });
-    }
+app.get('/api/visitors', (req, res) => {
+    res.json(visitors);
 });
 
 // API to clear all logs
-app.delete('/api/visitors', async (req, res) => {
-    try {
-        await Visitor.deleteMany({});
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to clear logs' });
-    }
+app.delete('/api/visitors', (req, res) => {
+    visitors = [];
+    res.json({ success: true });
 });
 
 // For local development
@@ -121,6 +95,7 @@ if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`\n🟢 Servidor rodando em http://localhost:${PORT}`);
         console.log(`📊 Painel Admin em http://localhost:${PORT}/admin`);
+        console.log(`💾 Storage: Memória (temporário)`);
         console.log(`\nAguardando visitantes...\n`);
     });
 }
