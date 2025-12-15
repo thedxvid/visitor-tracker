@@ -1,19 +1,16 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ensure logs directory exists
-const logsDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
-}
+// In-memory storage (resets on each deploy/restart)
+// For production, use a database like MongoDB Atlas, Supabase, etc.
+let visitors = [];
 
 // Helper to get client IP
 function getClientIp(req) {
@@ -36,7 +33,6 @@ app.post('/api/log', async (req, res) => {
         // Get geolocation from IP
         let geoData = {};
         try {
-            // Using ip-api.com (free, no API key needed)
             const geoResponse = await axios.get(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
             if (geoResponse.data.status === 'success') {
                 geoData = geoResponse.data;
@@ -47,6 +43,7 @@ app.post('/api/log', async (req, res) => {
         }
 
         const visitorRecord = {
+            id: Date.now(),
             timestamp: new Date().toISOString(),
             ip: ip,
             userAgent: userAgent,
@@ -56,11 +53,15 @@ app.post('/api/log', async (req, res) => {
             clientInfo: clientData
         };
 
-        // Append to JSONL file
-        const logFile = path.join(logsDir, 'visitors.jsonl');
-        fs.appendFileSync(logFile, JSON.stringify(visitorRecord) + '\n');
+        // Store in memory
+        visitors.unshift(visitorRecord);
 
-        console.log(`[${new Date().toLocaleString('pt-BR')}] Novo visitante registrado: ${ip}`);
+        // Keep only last 100 visitors
+        if (visitors.length > 100) {
+            visitors = visitors.slice(0, 100);
+        }
+
+        console.log(`[${new Date().toLocaleString('pt-BR')}] Novo visitante: ${ip}`);
 
         res.json({ success: true });
     } catch (error) {
@@ -81,45 +82,23 @@ app.get('/admin', (req, res) => {
 
 // API to get all visitors
 app.get('/api/visitors', (req, res) => {
-    try {
-        const logFile = path.join(logsDir, 'visitors.jsonl');
-
-        if (!fs.existsSync(logFile)) {
-            return res.json([]);
-        }
-
-        const content = fs.readFileSync(logFile, 'utf-8');
-        const lines = content.trim().split('\n').filter(line => line.trim());
-        const visitors = lines.map(line => {
-            try {
-                return JSON.parse(line);
-            } catch {
-                return null;
-            }
-        }).filter(v => v !== null);
-
-        // Return in reverse order (newest first)
-        res.json(visitors.reverse());
-    } catch (error) {
-        console.error('Error reading visitors:', error);
-        res.status(500).json({ error: 'Failed to read visitors' });
-    }
+    res.json(visitors);
 });
 
 // API to clear all logs
 app.delete('/api/visitors', (req, res) => {
-    try {
-        const logFile = path.join(logsDir, 'visitors.jsonl');
-        fs.writeFileSync(logFile, '');
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to clear logs' });
-    }
+    visitors = [];
+    res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-    console.log(`\n🟢 Servidor rodando em http://localhost:${PORT}`);
-    console.log(`📊 Painel Admin em http://localhost:${PORT}/admin`);
-    console.log(`📁 Logs salvos em: ${logsDir}`);
-    console.log(`\nAguardando visitantes...\n`);
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`\n🟢 Servidor rodando em http://localhost:${PORT}`);
+        console.log(`📊 Painel Admin em http://localhost:${PORT}/admin`);
+        console.log(`\nAguardando visitantes...\n`);
+    });
+}
+
+// Export for Vercel
+module.exports = app;
