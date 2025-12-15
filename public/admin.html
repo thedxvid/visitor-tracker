@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Visitor Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #242424;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-purple: #820AD1;
+            --accent-green: #00A859;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6a09ab;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-purple);
+            color: var(--text-primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 24px 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .stat-value.purple {
+            color: var(--accent-purple);
+        }
+
+        .stat-value.green {
+            color: var(--accent-green);
+        }
+
+        .stat-value.blue {
+            color: var(--accent-blue);
+        }
+
+        .main-content {
+            padding: 0 32px 32px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .visitors-table {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(130, 10, 209, 0.05);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: rgba(0, 168, 89, 0.15);
+            color: var(--accent-green);
+        }
+
+        .badge-info {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .ip-cell {
+            font-family: 'Courier New', monospace;
+            color: var(--accent-purple);
+        }
+
+        .device-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .device-main {
+            font-weight: 500;
+        }
+
+        .device-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .location-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flag {
+            font-size: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--accent-green);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .detail-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .detail-item {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                padding: 16px;
+            }
+
+            .main-content {
+                padding: 0 16px 16px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <h1>📊 Visitor Tracker</h1>
+        <div class="header-actions">
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                Ao vivo
+            </div>
+            <button class="btn btn-outline" onclick="loadVisitors()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
+                Atualizar
+            </button>
+            <button class="btn btn-danger" onclick="clearLogs()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+                Limpar
+            </button>
+        </div>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total de Visitantes</div>
+            <div class="stat-value purple" id="totalVisitors">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Últimas 24h</div>
+            <div class="stat-value green" id="last24h">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Dispositivos Móveis</div>
+            <div class="stat-value blue" id="mobileCount">0</div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="section-header">
+            <h2 class="section-title">Visitantes Recentes</h2>
+        </div>
+
+        <div class="visitors-table">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>IP</th>
+                            <th>Localização</th>
+                            <th>Dispositivo</th>
+                            <th>Tela</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visitorsBody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                                    </svg>
+                                    <p>Nenhum visitante registrado ainda</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail Modal -->
+    <div class="detail-modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalhes do Visitante</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let visitorsData = [];
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getCountryFlag(countryCode) {
+            if (!countryCode) return '🌍';
+            const codePoints = countryCode
+                .toUpperCase()
+                .split('')
+                .map(char => 127397 + char.charCodeAt());
+            return String.fromCodePoint(...codePoints);
+        }
+
+        function parseUserAgent(ua) {
+            let browser = 'Desconhecido';
+            let os = 'Desconhecido';
+
+            // Browser detection
+            if (ua.includes('Chrome')) browser = 'Chrome';
+            else if (ua.includes('Firefox')) browser = 'Firefox';
+            else if (ua.includes('Safari')) browser = 'Safari';
+            else if (ua.includes('Edge')) browser = 'Edge';
+            else if (ua.includes('Opera')) browser = 'Opera';
+
+            // OS detection
+            if (ua.includes('Windows')) os = 'Windows';
+            else if (ua.includes('Mac')) os = 'macOS';
+            else if (ua.includes('Linux')) os = 'Linux';
+            else if (ua.includes('Android')) os = 'Android';
+            else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+
+            return { browser, os };
+        }
+
+        function isMobile(ua) {
+            return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(ua);
+        }
+
+        async function loadVisitors() {
+            try {
+                const response = await fetch('/api/visitors');
+                visitorsData = await response.json();
+                renderVisitors();
+                updateStats();
+            } catch (error) {
+                console.error('Failed to load visitors:', error);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalVisitors').textContent = visitorsData.length;
+
+            const now = new Date();
+            const last24h = visitorsData.filter(v => {
+                const visitTime = new Date(v.timestamp);
+                return (now - visitTime) < 24 * 60 * 60 * 1000;
+            }).length;
+            document.getElementById('last24h').textContent = last24h;
+
+            const mobileCount = visitorsData.filter(v => isMobile(v.userAgent)).length;
+            document.getElementById('mobileCount').textContent = mobileCount;
+        }
+
+        function renderVisitors() {
+            const tbody = document.getElementById('visitorsBody');
+
+            if (visitorsData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                                </svg>
+                                <p>Nenhum visitante registrado ainda</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = visitorsData.map((visitor, index) => {
+                const { browser, os } = parseUserAgent(visitor.userAgent);
+                const geo = visitor.geolocation || {};
+                const client = visitor.clientInfo || {};
+                const flag = getCountryFlag(geo.countryCode);
+                const location = geo.city ? `${geo.city}, ${geo.country}` : 'Desconhecido';
+                const screen = client.screenWidth ? `${client.screenWidth}x${client.screenHeight}` : '-';
+
+                return `
+                    <tr>
+                        <td>${formatDate(visitor.timestamp)}</td>
+                        <td class="ip-cell">${visitor.ip}</td>
+                        <td>
+                            <div class="location-cell">
+                                <span class="flag">${flag}</span>
+                                <span>${location}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="device-info">
+                                <span class="device-main">${browser}</span>
+                                <span class="device-sub">${os}</span>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-info">${screen}</span></td>
+                        <td>
+                            <button class="btn btn-outline" onclick="showDetails(${index})">Ver mais</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showDetails(index) {
+            const visitor = visitorsData[index];
+            const geo = visitor.geolocation || {};
+            const client = visitor.clientInfo || {};
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-section-title">Informações de Rede</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">IP</div>
+                            <div class="detail-value">${visitor.ip}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ISP</div>
+                            <div class="detail-value">${geo.isp || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">País</div>
+                            <div class="detail-value">${geo.country || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Cidade</div>
+                            <div class="detail-value">${geo.city || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Região</div>
+                            <div class="detail-value">${geo.regionName || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">CEP</div>
+                            <div class="detail-value">${geo.zip || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <div class="detail-section-title">Dispositivo</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Tela</div>
+                            <div class="detail-value">${client.screenWidth}x${client.screenHeight}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Cores</div>
+                            <div class="detail-value">${client.colorDepth}-bit</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Memória</div>
+                            <div class="detail-value">${client.deviceMemory || 'N/A'} GB</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">CPU Cores</div>
+                            <div class="detail-value">${client.hardwareConcurrency || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Bateria</div>
+                            <div class="detail-value">${client.batteryLevel || 'N/A'} ${client.batteryCharging ? '⚡' : ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Touch</div>
+                            <div class="detail-value">${client.maxTouchPoints || 0} pontos</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <div class="detail-section-title">GPU</div>
+                    <div class="detail-grid">
+                        <div class="detail-item" style="grid-column: span 2">
+                            <div class="detail-label">Renderizador</div>
+                            <div class="detail-value">${client.gpuRenderer || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <div class="detail-section-title">Conexão</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Tipo</div>
+                            <div class="detail-value">${client.connectionEffectiveType || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Velocidade</div>
+                            <div class="detail-value">${client.connectionDownlink || 'N/A'} Mbps</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Timezone</div>
+                            <div class="detail-value">${client.timezone || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Idioma</div>
+                            <div class="detail-value">${client.language || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <div class="detail-section-title">User Agent</div>
+                    <div class="detail-item" style="background: var(--bg-secondary)">
+                        <div class="detail-value" style="font-size: 12px; font-family: monospace;">${visitor.userAgent}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        async function clearLogs() {
+            if (!confirm('Tem certeza que deseja limpar todos os logs?')) return;
+
+            try {
+                await fetch('/api/visitors', { method: 'DELETE' });
+                loadVisitors();
+            } catch (error) {
+                console.error('Failed to clear logs:', error);
+            }
+        }
+
+        // Close modal on outside click
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') closeModal();
+        });
+
+        // Auto-refresh every 10 seconds
+        setInterval(loadVisitors, 10000);
+
+        // Initial load
+        loadVisitors();
+    </script>
+</body>
+
+</html>

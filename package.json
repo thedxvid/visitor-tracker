@@ -1,0 +1,13 @@
+{
+  "name": "visitor-tracker",
+  "version": "1.0.0",
+  "description": "Sistema de rastreamento de visitantes com UI de comprovante",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0"
+  }
+}
